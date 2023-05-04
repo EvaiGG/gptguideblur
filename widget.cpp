@@ -1,10 +1,17 @@
 #include "widget.h"
 #include <QImage>
 #include <QPainter>
+#include <QGuiApplication>
+#include <QPixmap>
+#include <QScreen>
+#include <QRectF>
+#include <QPaintEvent>
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
 {
+    cutScreen();
+    gaussBlur(bkgImg);
 }
 
 Widget::~Widget()
@@ -13,13 +20,18 @@ Widget::~Widget()
 
 void Widget::cutScreen()
 {
-
+    QScreen *screen = QGuiApplication::primaryScreen();
+    QRectF widgetRect = this->geometry();
+    QPixmap img =screen->grabWindow(0, widgetRect.x(), widgetRect.y(), this->width(),this->height());
+//    img.save("fullScreen.jpg");
+    this->bkgImg =  img.toImage();
 }
 
 void Widget::gaussBlur(QImage *img)
 {
     // 加载图片
-    QImage image("test.jpg");
+//    QImage image("test.jpg");
+    QImage image = this->bkgImg;
     if (image.isNull())
     {
         qDebug() << "无法加载图片";
@@ -67,6 +79,15 @@ void Widget::gaussBlur(QImage *img)
     // 保存卷积结果
     QPixmap pixmap = QPixmap::fromImage(blurredImage);
     pixmap.save("blurred.jpg");
+    this->blurImg = pixmap;
+
+}
+
+void Widget::paintEvent(QPaintEvent *event)
+{
+    QPainter painter(this);
+    QRect rect = event->rect();
+    painter.drawPixmap(rect, this->blurImg);
 }
 
 
